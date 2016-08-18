@@ -1,0 +1,15 @@
+var sourceSpreadsheetID = "1h-mmh-EN4jMHMImehwo5OECXyt4om0j6Q7WBJbvTLF8"; //This is the Hex sheet
+var sourceWorksheetName = "Sheet1";
+var destinationSpreadsheetID = "1RwNNzpVa08PKjR2YWoKphlibvV7rSvBRlHadl7xIPT8";//This is the HR sheet
+var destinationWorksheetName = "Sheet1";
+
+function importData() {
+  var thisSpreadsheet = SpreadsheetApp.openById(sourceSpreadsheetID);
+  var thisWorksheet = thisSpreadsheet.getSheetByName(sourceWorksheetName);
+  var thisData = thisWorksheet.getDataRange();
+  
+  var toSpreadsheet = SpreadsheetApp.openById(destinationSpreadsheetID);
+  var toWorksheet = toSpreadsheet.getSheetByName(destinationWorksheetName);
+  var toRange = toWorksheet.getRange(1, 1, thisData.getNumRows(), thisData.getNumColumns())
+  toRange.setValues(thisData.getValues()); 
+}
