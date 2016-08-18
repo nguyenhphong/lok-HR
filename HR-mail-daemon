@@ -1,0 +1,75 @@
+var positionsArray = ["Content Creator", "HR Manager", "Video Artist", "Voice", "Outreach Coordinator","Video Editor", "Marketing Coordinator"];
+var d = new Date();
+var ssKey = "17yU3z7aPTq62LED8-ddTGrgdHCJhYl0NDbwAsa7gKK8"
+
+
+function sendEmails() {
+  var sheet = SpreadsheetApp.openById(ssKey).getSheetByName("Test Sheet");
+  Logger.log(sheet.getSheetName());
+  var startRow = 2;  // First row of data to process
+  var numRows = 200;   // Number of rows to process
+  // Fetch the range of cells A2:J102
+  var dataRange = sheet.getRange(startRow, 1, numRows, 10)
+  // Fetch values for each row in the Range.
+  var data = dataRange.getValues();
+  //be careful of the quirk here: data starts from row 2, so data[0] witll be row 2, data[1] will be row 3, and so on...
+  
+  var msgSheet = SpreadsheetApp.openById(ssKey).getSheetByName("Email template");
+  var msgRange = msgSheet.getRange(1,1,10,5); //A1:E10
+  var msgData = msgRange.getValues();
+  Logger.log("this is msgSheet: "+msgSheet.getSheetName());
+  //Logger.log("this is msgData: "+msgData);
+
+
+  var GOI_PV_COL = 1;
+  var REJECT_PV_COL = 2;
+  
+  //remember, in code, you count from 0, so col A is 0, B is 1, and so on...
+  var DECISION_COL = 3;     //sendDecision is column D - 4th colummn
+  var MAIL_SENT_COL = 6;    //Column G - 7th colum
+
+  
+  for (var i = 0; i < data.length; ++i) {
+    var row = data[i];
+    var emailAddress = row[5];  // Column F - 6th column
+    Logger.log("This is email "+emailAddress);
+    var emailSent = row[MAIL_SENT_COL]; //Column G - 7th column
+    Logger.log("this is emailSent " + emailSent);
+    //sendDecision is column D - 4th colummn
+    var sendDecision = row[DECISION_COL].trim().toLowerCase(); //Trim and lower case
+    Logger.log("this is sendDecision " + sendDecision);
+    
+    //Prevent: Sending to positions not in position list, send to rejected, send duplicates, send to empty emails
+    //In that order
+    
+    if (positionsArray.indexOf(row[DECISION_COL])>-1 && sendDecision != "no"&& sendDecision!="" && emailSent == "" && emailAddress != "") { 
+      var subject = msgData[1][GOI_PV_COL];
+      Logger.log("This is subject: "+subject);
+      var message = row[1]+" thân mến,\n \n"+msgData[2][GOI_PV_COL]+" "+row[DECISION_COL]+ " " + msgData[3][GOI_PV_COL]+" "+msgData[4][GOI_PV_COL]+" "+msgData[5][GOI_PV_COL];
+      Logger.log("this is msg: "+message)
+      
+      //where the mail actual sends
+      MailApp.sendEmail(emailAddress, subject, message);
+      sheet.getRange(startRow + i, MAIL_SENT_COL+1).setValue(row[DECISION_COL]+" "+d+" INTERVIEW_SENT"); //Update that email is sent to that position at that time & date
+      // Make sure the cell is updated right away in case the script is interrupted
+      SpreadsheetApp.flush();
+      Logger.log("__________END OF ACCEPTANCE RUN_______________")
+      
+    } else if (sendDecision == "no" && emailSent == "" && emailAddress != ""){
+      var subject = msgData[1][REJECT_PV_COL]; //Rejection subject
+      Logger.log("This is rej subject: "+subject);
+      var message = row[1]+" thân mến,\n \n" + msgData[2][REJECT_PV_COL];
+      Logger.log("this is rej msg: "+message)
+      
+      //where the mail actually sends
+      MailApp.sendEmail(emailAddress, subject, message);
+      sheet.getRange(startRow + i, MAIL_SENT_COL+1).setValue(d+" REJECTION_SENT"); //Update that email is sent
+      // Make sure the cell is updated right away in case the script is interrupted
+      SpreadsheetApp.flush();
+      Logger.log("__________END OF REJECTION RUN_______________")
+
+    }
+  }
+}
+
+
